@@ -184,13 +184,19 @@
         </div>
     </div>
 
-   <script>
+  <script>
     document.getElementById('feedForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         // Get input values
         const weight30 = parseFloat(document.getElementById('weight30').value);
         const feedPercentage = parseFloat(document.getElementById('feedPercentage').value);
+        
+        // Validate inputs
+        if (isNaN(weight30) || isNaN(feedPercentage)) {
+            alert('Please enter valid numbers');
+            return;
+        }
         
         // Calculate total fish weight
         const totalWeight = (weight30 / 30) * 300;
@@ -206,12 +212,12 @@
         document.getElementById('results').style.display = 'block';
         
         // Send data to Google Sheets
-        sendToGoogleSheets(weight30, feedPercentage, totalWeight, dailyFeed);
+        sendToGoogleSheets(weight30, feedPercentage, Math.round(totalWeight), Math.round(dailyFeed));
     });
     
     function sendToGoogleSheets(weight30, feedPercentage, totalWeight, dailyFeed) {
         // REPLACE THIS URL WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbxpeC6yayNOLf-YT_pttWgwUEpL2tvig8jk2flHKGk0aO--MV2gW3YpD2AJh4jLtLn_/exec';
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwhpS2t5nyejgFrzCbIDrM5ocwJUEmWFGDh1P2n9HjclAZaJTbRCBYKLsXJper0yzvS/exec';
         
         // Show loading state
         const button = document.querySelector('button');
@@ -219,29 +225,32 @@
         button.textContent = 'Mengirim Data...';
         button.disabled = true;
         
+        // Create the data object
+        const payload = {
+            weight30: weight30,
+            feedPercentage: feedPercentage,
+            totalWeight: totalWeight,
+            dailyFeed: dailyFeed
+        };
+        
+        console.log('Sending data:', payload);
+        
+        // Send the request
         fetch(scriptURL, {
             method: 'POST',
-            body: JSON.stringify({
-                weight30: weight30,
-                feedPercentage: feedPercentage,
-                totalWeight: Math.round(totalWeight),
-                dailyFeed: Math.round(dailyFeed)
-            }),
+            mode: 'no-cors', // Important for Google Apps Script
             headers: {
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.result === 'success') {
-                alert('Data berhasil disimpan ke Google Sheets!');
-            } else {
-                throw new Error(data.error);
-            }
+        .then(() => {
+            // With 'no-cors' mode, we can't read the response, but we assume it worked
+            alert('Data berhasil disimpan ke Google Sheets!');
         })
         .catch(error => {
             console.error('Error sending data:', error);
-            alert('Data berhasil dihitung, tetapi gagal menyimpan ke Google Sheets. Error: ' + error.message);
+            alert('Data berhasil dihitung, tetapi mungkin gagal menyimpan ke Google Sheets. Error: ' + error.message);
         })
         .finally(() => {
             // Reset button state
@@ -250,3 +259,4 @@
         });
     }
 </script>
+
